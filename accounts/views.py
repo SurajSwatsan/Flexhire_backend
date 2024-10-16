@@ -11,17 +11,21 @@ from .serializers import (
     SetNewPasswordSerializer,
     SocialMediaLoginSerializer,
     RoleSerializer,
-    CustomerAdminRegistrationSerializer,
+    CustomerAdminRegistrationSerializer,AdminRegistrationSerializer
 )
 from django.http import Http404
 from .permissions import IsAdminUser  # Import the custom permission
 from rest_framework.permissions import IsAuthenticated
 
 
-class RoleListCreateAPIView(APIView):
+class RolesAPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def get(self, request):
+    def get(self, request, pk):
+        if pk:
+            roles = RoleMaster.objects.filter(parent=pk)
+            serializer = RoleSerializer(roles)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         roles = RoleMaster.objects.all()
         serializer = RoleSerializer(roles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -36,23 +40,8 @@ class RoleListCreateAPIView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class RoleDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def get_object(self, pk):
-        try:
-            return RoleMaster.objects.get(pk=pk)
-        except RoleMaster.DoesNotExist:
-            raise Http404("Role not found.")
-
-    def get(self, request, pk):
-        role = self.get_object(pk)
-        serializer = RoleSerializer(role)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def put(self, request, pk):
-        role = self.get_object(pk)
+        role = RoleMaster.objects.get(id=pk)
         serializer = RoleSerializer(role, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -62,11 +51,38 @@ class RoleDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        role = self.get_object(pk)
+        role = RoleMaster.objects.get(id=pk)
         role.delete()
         return Response(
             {"message": "Role deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
+
+
+class AdminRegistrationAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminUser,
+    ]  # Only authenticated users (admins) can access this API
+
+    def post(self, request):
+        # Check if the requesting user is an admin
+        if request.user.user_type.name != "Admin":
+            return Response(
+                {"detail": "Only admins can register a Customer Admin."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = AdminRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "message": "Customer Admin registered successfully",
+                    "user_id": user.user_id,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomerAdminRegistrationAPIView(APIView):

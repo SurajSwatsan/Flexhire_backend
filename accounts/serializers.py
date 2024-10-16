@@ -16,6 +16,24 @@ class RoleSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class AdminRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["mobile_number", "email", "social_media_id", "password_hash"]
+
+    def validate(self, attrs):
+        # Ensure at least one identifier is provided
+        if not (attrs.get("mobile_number") or attrs.get("email")):
+            raise serializers.ValidationError(
+                "You must provide either a mobile number or email."
+            )
+
+        # Ensure the Customer Admin role ID is correct
+        customer_admin_role = RoleMaster.objects.get(name="Admin")
+        attrs["role_id"] = customer_admin_role.id
+        return attrs
+
+
 class CustomerAdminRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -23,13 +41,9 @@ class CustomerAdminRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         # Ensure at least one identifier is provided
-        if not (
-            attrs.get("mobile_number")
-            or attrs.get("email")
-            or attrs.get("social_media_id")
-        ):
+        if not (attrs.get("mobile_number") or attrs.get("email")):
             raise serializers.ValidationError(
-                "You must provide either a mobile number, email, or social media ID."
+                "You must provide either a mobile number or email."
             )
 
         # Ensure the Customer Admin role ID is correct
