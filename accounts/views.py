@@ -1,9 +1,8 @@
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db.models import Q
-from .models import User, RoleMaster
+from .models import UserMaster, RoleMaster
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -12,47 +11,64 @@ from .serializers import (
     SocialMediaLoginSerializer,
     RoleSerializer,
     CustomerAdminRegistrationSerializer,
+    AdminRegistrationSerializer,
+    AdminTeamRegistrationSerializer,
+    CustomerTeamRegistrationSerializer,
 )
 from django.http import Http404
-from .permissions import IsAdminUser  # Import the custom permission
+from .permissions import IsAdminUser, IsCustomerUser
 from rest_framework.permissions import IsAuthenticated
 
 
-class RoleListCreateAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+class RolesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, pk=None):
+        if pk is not None:
+            # Check if the requesting user is an admin
+            if self.request.user.user_type.role_name != "Employer":
+                return Response(
+                    {"detail": "Only customer admins can access data"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            roles = RoleMaster.objects.filter(parent=pk)
+            serializer = RoleSerializer(roles, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        # Check if the requesting user is an admin
+        if self.request.user.user_type.role_name != "Admin":
+            return Response(
+                {"detail": "Only admins can access data"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         roles = RoleMaster.objects.all()
         serializer = RoleSerializer(roles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        # Check if the requesting user is an admin
+        if self.request.user.user_type.role_name != "Admin":
+            return Response(
+                {"detail": "Only admins can add a role"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = RoleSerializer(data=request.data)
         if serializer.is_valid():
-            role = serializer.save()
+            serializer.save()
             return Response(
-                {"message": "Role created successfully", "role_id": role.id},
+                {"message": "Role created successfully"},
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class RoleDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def get_object(self, pk):
-        try:
-            return RoleMaster.objects.get(pk=pk)
-        except RoleMaster.DoesNotExist:
-            raise Http404("Role not found.")
-
-    def get(self, request, pk):
-        role = self.get_object(pk)
-        serializer = RoleSerializer(role)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def put(self, request, pk):
-        role = self.get_object(pk)
+        # Check if the requesting user is an admin
+        if self.request.user.user_type.role_name != "Admin":
+            return Response(
+                {"detail": "Only admins can update a role"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        role = RoleMaster.objects.get(id=pk)
         serializer = RoleSerializer(role, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -62,26 +78,69 @@ class RoleDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        role = self.get_object(pk)
+        # Check if the requesting user is an admin
+        if self.request.user.user_type.role_name != "Admin":
+            return Response(
+                {"detail": "Only admins can delete a role"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        role = RoleMaster.objects.get(id=pk)
         role.delete()
         return Response(
             {"message": "Role deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
 
 
+class AdminRegistrationAPIView(APIView):
+    # permission_classes = [
+    #     IsAuthenticated,
+    #     IsAdminUser,
+    # ]
+
+    def post(self, request):
+
+        serializer = AdminRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "message": "Customer Admin registered successfully",
+                    "id": user.id,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminTeamRegistrationAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminUser,
+    ]
+
+    def post(self, request):
+
+        serializer = AdminTeamRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "message": "Admin team member registered successfully",
+                    "id": user.id,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class CustomerAdminRegistrationAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
         IsAdminUser,
-    ]  # Only authenticated users (admins) can access this API
+    ]
+    # Only authenticated users (admins) can access this API
 
     def post(self, request):
-        # Check if the requesting user is an admin
-        if request.user.user_type.name != "Admin":
-            return Response(
-                {"detail": "Only admins can register a Customer Admin."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
 
         serializer = CustomerAdminRegistrationSerializer(data=request.data)
         if serializer.is_valid():
@@ -89,7 +148,28 @@ class CustomerAdminRegistrationAPIView(APIView):
             return Response(
                 {
                     "message": "Customer Admin registered successfully",
-                    "user_id": user.user_id,
+                    "id": user.id,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomerTeamRegistrationAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsCustomerUser,
+    ]
+
+    def post(self, request):
+
+        serializer = CustomerTeamRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "message": "Team memeber registered successfully",
+                    "id": user.id,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -102,7 +182,7 @@ class UserRegistrationAPIView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             return Response(
-                {"message": "User registered successfully", "user_id": user.user_id},
+                {"message": "User registered successfully", "id": user.id},
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -117,7 +197,7 @@ class UserLoginAPIView(APIView):
             return Response(
                 {
                     "message": "Login successful",
-                    "user_id": user.user_id,
+                    "id": user.id,
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),
                 },
@@ -154,7 +234,7 @@ class SocialMediaLoginAPIView(APIView):
         serializer = SocialMediaLoginSerializer(data=request.data)
         if serializer.is_valid():
             social_media_id = serializer.validated_data["social_media_id"]
-            user = User.objects.filter(social_media_id=social_media_id).first()
+            user = UserMaster.objects.filter(social_media_id=social_media_id).first()
 
             if user:
                 # User exists, log them in and generate tokens
@@ -162,7 +242,7 @@ class SocialMediaLoginAPIView(APIView):
                 return Response(
                     {
                         "message": "Login successful",
-                        "user_id": user.user_id,
+                        "id": user.id,
                         "access": str(refresh.access_token),
                         "refresh": str(refresh),
                     },
@@ -182,7 +262,7 @@ class SocialMediaLoginAPIView(APIView):
                     return Response(
                         {
                             "message": "User registered successfully",
-                            "user_id": user.user_id,
+                            "id": user.id,
                             "access": str(refresh.access_token),
                             "refresh": str(refresh),
                         },
