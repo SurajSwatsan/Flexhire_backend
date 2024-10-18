@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 import datetime
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,6 +51,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_cleanup.apps.CleanupConfig",
     "accounts",
+    "shared_resources",
+    "employer"
 ]
 
 MIDDLEWARE = [
@@ -141,7 +144,7 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-# New added dependencies
+################  New added dependencies  ######################
 
 # custom user table settings
 
@@ -191,3 +194,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "your_email@gmail.com"
 EMAIL_HOST_PASSWORD = "your_password"
 DEFAULT_FROM_EMAIL = "your_email@gmail.com"
+
+# documents upload base path setting
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")

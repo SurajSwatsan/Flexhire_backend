@@ -3,6 +3,7 @@ from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
 )
+from shared_resources.models import Country
 
 
 class CustomUserManager(BaseUserManager):
@@ -47,6 +48,14 @@ class UserMaster(AbstractBaseUser):
     social_media_id = models.CharField(max_length=255, unique=True, null=True)
     user_password = models.CharField(max_length=255, null=True)
     user_type = models.ForeignKey(RoleMaster, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="parent_user",
+    )
+    country_id = models.ForeignKey(Country, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -62,10 +71,6 @@ class UserMaster(AbstractBaseUser):
     @property
     def is_authenticated(self):
         return True
-
-    # @property
-    # def id(self):
-    #     return self.user_id  # Provide an alias for id
 
     def __str__(self):
         return self.email or self.mobile_number or self.social_media_id
