@@ -4,8 +4,15 @@ from io import BytesIO
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Country
-from .serializers import CountrySerializer
+from .models import Country, CasteCategory, University, State, Course, Specialization
+from .serializers import (
+    CountrySerializer,
+    CasteCategorySerializer,
+    UniversitySerializer,
+    StateSerializer,
+    CourseSerializer,
+    SpecializationSerializer,
+)
 
 
 class CountryAPIView(APIView):
@@ -13,6 +20,7 @@ class CountryAPIView(APIView):
         countries = Country.objects.all()
         serializer = CountrySerializer(countries, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     def post(self, request):
         # Get the Base64-encoded file data
         base64_file = request.data.get("file")
@@ -59,8 +67,6 @@ class CountryAPIView(APIView):
         )
 
 
-
-
 class CountryByRegionAPIView(APIView):
     def get(self, request, region):
         countries = Country.objects.filter(region=region)
@@ -72,3 +78,105 @@ class DistinctRegionAPIView(APIView):
     def get(self, request):
         regions = Country.objects.values_list("region", flat=True).distinct()
         return Response(list(regions), status=status.HTTP_200_OK)
+
+
+class CasteCategoryDetail(APIView):
+    def get(self, request, pk=None):
+        if pk:
+            category = CasteCategory.objects.get(pk=pk)
+            if category is not None:
+                serializer = CasteCategorySerializer(category)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        categories = CasteCategory.objects.all()
+        serializer = CasteCategorySerializer(categories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = CasteCategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        category = CasteCategory.objects.get(pk=pk)
+        if category is not None:
+            serializer = CasteCategorySerializer(category, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    def delete(self, request, pk):
+        category = CasteCategory.objects.get(pk=pk)
+        if category is not None:
+            category.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+
+# State API
+class StateList(APIView):
+    def get(self, request):
+        states = State.objects.all()
+        serializer = StateSerializer(states, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = StateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# University API
+class UniversityList(APIView):
+    def get(self, request):
+        universities = University.objects.all()
+        serializer = UniversitySerializer(universities, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = UniversitySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Course API
+class CourseList(APIView):
+    def get(self, request):
+        courses = Course.objects.all()
+        serializer = CourseSerializer(courses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = CourseSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SpecializationList(APIView):
+    def get(self, request):
+        specializations = Specialization.objects.all()
+        serializer = SpecializationSerializer(specializations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = SpecializationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

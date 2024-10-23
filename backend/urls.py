@@ -24,7 +24,7 @@ urlpatterns = [
     path("api/", include("accounts.urls")),
     path("api/", include("shared_resources.urls")),
     path("api/", include("employer.urls")),
-
+    path("api/", include("jobSeeker.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

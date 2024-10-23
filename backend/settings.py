@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     "django_cleanup.apps.CleanupConfig",
     "accounts",
     "shared_resources",
-    "employer"
+    "employer",
+    "jobSeeker"
 ]
 
 MIDDLEWARE = [
