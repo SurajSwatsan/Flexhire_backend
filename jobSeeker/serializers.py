@@ -37,8 +37,8 @@ class BasicDetailsSerializer(serializers.ModelSerializer):
 
 
 class ResumeVideoProfileSerializer(serializers.ModelSerializer):
-    resume = Base64ImageField(required=False)
-    video_profile = Base64ImageField(required=False)
+    # resume = Base64ImageField(required=False)
+    # video_profile = Base64ImageField(required=False)
 
     class Meta:
         model = ResumeVideoProfile

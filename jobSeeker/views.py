@@ -166,10 +166,21 @@ class ResumeVideoProfileDetail(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        # if 'video' in request.FILES and 'title' in request.POST:
+        #     job_seeker = request.POST['job_seeker']
+        #     resume = request.FILES['resume']
+        #     video_profile = request.FILES['video_profile']
+        #     context={
+        #         "job_seeker":job_seeker,
+        #         "resume":resume,
+        #         "video_profile":video_profile
+        #     }
+        # Get the title from the form
         serializer = ResumeVideoProfileSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, job_seeker_id):

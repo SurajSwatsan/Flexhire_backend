@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     "accounts",
     "shared_resources",
     "employer",
-    "jobSeeker"
+    "jobSeeker",
 ]
 
 MIDDLEWARE = [
@@ -159,6 +159,8 @@ ACCOUNT_EMAIL_REQUIRED = True
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.FormParser",  # Add this line
+        "rest_framework.parsers.MultiPartParser",  # Add this line for file uploads
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -199,3 +201,6 @@ DEFAULT_FROM_EMAIL = "your_email@gmail.com"
 # documents upload base path setting
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 152428800  # 50 MB

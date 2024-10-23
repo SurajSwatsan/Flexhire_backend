@@ -22,7 +22,7 @@ urlpatterns = [
     path("career-preferences/<int:job_seeker_id>", CareerPreferencesDetail.as_view()),
     path("basic-details", BasicDetailsDetail.as_view(), name="basic-details-list"),
     path("basic-details/<int:job_seeker_id>", BasicDetailsDetail.as_view()),
-    path("resume-video-profile/", ResumeVideoProfileDetail.as_view()),
+    path("resume-video-profile", ResumeVideoProfileDetail.as_view()),
     path("resume-video-profile/<int:job_seeker_id>/", ResumeVideoProfileDetail.as_view()),
     path("professional-details", ProfessionalDetailsDetail.as_view()),
     path("professional-details/<int:job_seeker_id>", ProfessionalDetailsDetail.as_view()),
